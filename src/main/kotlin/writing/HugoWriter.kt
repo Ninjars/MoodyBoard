@@ -76,11 +76,14 @@ object HugoWriter {
 
     private fun BufferedWriter.writeSection(fileDownloader: FileDownloader, section: DataSection) {
         val sectionDeets = section.tweetData.map { data ->
+            val prefix = "${
+                section.title?.lowercase()?.replace("\\s".toRegex(), "_") ?: "generic"
+            }-${data.authorHandle.lowercase()}-"
             val photos = runBlocking(Dispatchers.IO) {
-                data.photoUrls?.let { fileDownloader.downloadAll(it) }
+                data.photoUrls?.let { fileDownloader.downloadAll(prefix, it) }
             }
             val videos = runBlocking {
-                data.videoUrls?.let { fileDownloader.downloadAll(it) }
+                data.videoUrls?.let { fileDownloader.downloadAll(prefix, it) }
             }
             PreparedSection(
                 data.authorScreenName,

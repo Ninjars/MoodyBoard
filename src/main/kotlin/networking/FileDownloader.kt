@@ -11,9 +11,9 @@ class FileDownloader(
     private val rootFile: File
 ) {
 
-    suspend fun downloadAll(urls: List<String>): List<File> =
+    suspend fun downloadAll(prefix: String, urls: List<String>): List<File> =
         urls.pmap { url ->
-            val file = File(rootFile, url.toFileName())
+            val file = File(rootFile, "$prefix${url.toFileName()}")
             if (withContext(Dispatchers.IO) { file.createNewFile() }) {
                 Logger.logv { "downloading $url" }
                 Fuel.download(url)
