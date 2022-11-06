@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter
 
 object HugoWriter {
     private const val HeaderSeparator = "---"
-//    private const val TableSeparator = "|"
     private const val SectionHeaderPrefix = "### "
     private const val ImagesSubDir = "images"
     private const val FileSuffix = ".md"
@@ -113,38 +112,5 @@ object HugoWriter {
         data.videoFileNames?.forEach {
             appendLine("[![](../$ImagesSubDir/${it}  \"${data.tweetContent}\")](https://twitter.com/${data.authorHandle}/status/${data.tweetId})")
         }
-//        data.photoFileNames
-//            ?.map { "[![](../$ImagesSubDir/${it} \"${data.tweetContent}\")](https://twitter.com/${data.authorHandle}/status/${data.tweetId})" }
-//            ?.let {
-//                appendLine()
-//                appendLine("| --- | --- |")
-//            appendMediaElements(it)
-//        }
     }
-
-//    private fun BufferedWriter.appendMediaElements(elements: List<String>) {
-//        when (elements.count()) {
-//            0 -> return
-//            1 -> appendLine("|${elements.first()}| |")
-//            else -> {
-//                (0 until elements.size / 2).forEach {
-//                    val a = elements.getOrNull(it * 2)
-//                    val b = elements.getOrNull(it * 2 + 1)
-//                    appendTableRow(a, b)
-//                }
-//            }
-//        }
-//    }
-//
-//    private fun BufferedWriter.appendTableRow(vararg columns: String?) {
-//        val values = columns.filterNotNull()
-//        if (values.isEmpty()) return
-//
-//        append(TableSeparator)
-//        values.forEach {
-//            append(it)
-//            append(TableSeparator)
-//        }
-//        appendLine()
-//    }
 }
