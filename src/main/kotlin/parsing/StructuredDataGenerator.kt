@@ -1,14 +1,16 @@
 package parsing
 
 import Logger
+import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.ast.getTextInNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 
 private const val TwitterUrl = "https://twitter.com/"
 
-data class Data(
+data class Data constructor(
     val title: String,
+    val intro: String?,
     val sections: List<TweetSection>
 )
 
@@ -17,9 +19,38 @@ data class TweetSection(
     val tweetIds: List<String>,
 )
 
-fun markdownToTweetSections(input: String): List<TweetSection> {
+fun markdownToPageData(input: String): List<Data> {
     val flavour = CommonMarkFlavourDescriptor()
-    val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(input)
+    val parser = MarkdownParser(flavour)
+    val pages = input.splitStringOnMarkdownTitles().map {
+        val parsedTree = parser.buildMarkdownTreeFromString(it)
+        Data(
+            title = parsedTree.firstHeading(it) ?: "",
+            intro = parsedTree.introPara(it),
+            sections = markdownToTweetSections(parsedTree, it),
+        )
+    }
+    return pages
+}
+
+private fun String.splitStringOnMarkdownTitles(): List<String> = this.split("\n(?=#)".toRegex())
+
+private fun ASTNode.firstHeading(input: String): String? =
+    children.firstOrNull { it.type.name.startsWith("ATX") }
+        ?.getTextInNode(input)
+        ?.toString()
+        ?.replace("#", "")
+        ?.trim()
+
+private fun ASTNode.introPara(input: String): String? =
+    children.firstOrNull { it.type.name == "PARAGRAPH" }
+        ?.getTextInNode(input)
+        ?.toString()
+        ?.takeUnless {
+            it.split("\n").firstOrNull()?.isTwitterUrl() ?: true
+        }
+
+private fun markdownToTweetSections(parsedTree: ASTNode, input: String): List<TweetSection> {
     Logger.logv { "parsedTree:\n$parsedTree" }
     Logger.logv { "parent: ${parsedTree.parent}" }
     Logger.logv { "children:\n${parsedTree.children.map { "\n${it.type}\n${it.getTextInNode(input)}" }}" }

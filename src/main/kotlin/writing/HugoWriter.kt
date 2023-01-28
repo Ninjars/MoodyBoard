@@ -34,11 +34,12 @@ object HugoWriter {
         if (!destination.mkdir()) {
             Logger.log("Writing to existing directory ${destination.path}")
         }
+        val formattedTitle = data.pageTitle.lowercase().trim().replace("\\s".toRegex(), "-")
         val titleWithSuffix =
-            if (data.pageTitle.endsWith(FileSuffix)) {
-                data.pageTitle
+            if (formattedTitle.endsWith(FileSuffix)) {
+                formattedTitle
             } else {
-                "${data.pageTitle}$FileSuffix"
+                "${formattedTitle}$FileSuffix"
             }
         val outputFile = File(destination, titleWithSuffix).also {
             if (!it.createNewFile()) {
@@ -52,6 +53,9 @@ object HugoWriter {
 
         outputFile.bufferedWriter().use { writer ->
             writer.headerBlock(data.pageTitle, tags)
+
+            data.pageIntro?.let { writer.write(it) }
+            writer.write("<!--more-->")
 
             data.sections.forEach {
                 writer.writeSection(fileDownloader, it)

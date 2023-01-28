@@ -6,12 +6,13 @@ import kotlinx.coroutines.*
 import networking.TweetData
 import networking.getTweets
 import parsing.Data
-import parsing.markdownToTweetSections
+import parsing.markdownToPageData
 import writing.HugoWriter
 import java.io.File
 
 data class DataModel(
     val pageTitle: String,
+    val pageIntro: String?,
     val sections: List<DataSection>,
 )
 
@@ -20,15 +21,16 @@ data class DataSection(
     val tweetData: List<TweetData>,
 )
 
-private fun readFrom(inputFile: File, nameOverride: String?): Data {
+private fun readFrom(inputFile: File): List<Data> {
     Logger.logv { "Input file: ${inputFile.name}" }
     require(inputFile.exists()) { "Input file must exist" }
 
     val rawInput = inputFile.inputStream().bufferedReader().use { it.readText() }
     Logger.logv { "Raw Input:\n$rawInput" }
 
-    val sections = markdownToTweetSections(rawInput)
-    return Data(nameOverride ?: inputFile.name, sections)
+    //    val sections = markdownToTweetSections(rawInput)
+//    return Data(nameOverride ?: inputFile.name, sections)
+    return markdownToPageData(rawInput)
 }
 
 private fun buildModel(data: Data): DataModel {
@@ -40,7 +42,7 @@ private fun buildModel(data: Data): DataModel {
             )
         }
     }
-    return DataModel(data.title, sections)
+    return DataModel(data.title, data.intro, sections)
 }
 
 suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
@@ -54,7 +56,7 @@ fun main(args: Array<String>) {
     val verbose by parser.option(ArgType.Boolean, shortName = "v", description = "Enable verbose logging")
         .default(false)
     val inputFileName by parser.option(ArgType.String, shortName = "i", description = "Input file").required()
-    val fileNameOverride by parser.option(ArgType.String, shortName = "n", description = "Name for output file")
+//    val fileNameOverride by parser.option(ArgType.String, shortName = "n", description = "Name for output file")
     val output by parser.option(
         ArgType.String,
         shortName = "o",
@@ -70,8 +72,10 @@ fun main(args: Array<String>) {
 
     Logger.verboseEnabled = verbose
 
-    val inputData = readFrom(File(inputFileName), fileNameOverride)
-    val modelledData = buildModel(inputData)
+    val inputData = readFrom(File(inputFileName))
+    val modelledData = inputData.map { buildModel(it) }
 
-    HugoWriter.output(File(output), modelledData, tags)
+    for (model in modelledData) {
+        HugoWriter.output(File(output), model, tags)
+    }
 }
